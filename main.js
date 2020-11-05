@@ -100,6 +100,7 @@ class Field {
             atom.update();
         });
     }
+
     add(pos) {
         pos = cast_to(pos, Vector);
         let atom = new Atom(pos, new Vector, new Vector);
