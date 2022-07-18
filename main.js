@@ -1,3 +1,5 @@
+
+
 var c = document.getElementById("cvs");
 let ctx = eval(`document.getElementById("cvs").getContext("2d")`);
 ctx.lineCap = 'round';
@@ -29,7 +31,7 @@ c.onclick = (click) => {
         y: click.clientY - c.offsetTop
     };
     field.add(pos);
-    console.log(pos);
+   // console.log(pos);
 };
 class Vector {
     constructor(x = 0, y = 0) {
@@ -53,6 +55,10 @@ class Vector {
             }
         };
     }
+
+    toS() {
+        return this.x + ":" + this.y
+    }
 }
 let genDef = (f, dx = 0.1) => {
     return (x) => (f(x) - f(x + dx)) / dx;
@@ -62,24 +68,73 @@ class Atom {
         this.loc = loc;
         this.a = a;
         this.speed = speed;
+        this.dist_by_atm = new Map()
+        this.dist_draw_cnt = 0
     }
     getEnergyBetween(another) {
         let distance = another.loc.getDistance(this.loc);
-        return 1 / distance**2 - distance * (1 / 5000)
-        return Math.abs(distance - 2) / distance - 1;
+        if (distance > 150) {
+            return 0
+        } 
+        return (distance -150) ** 2
     }
+
+    getDirection(another) {
+        return new Vector(
+            another.loc.x - this.loc.x,
+            another.loc.y - this.loc.y
+        ).div(
+            another.loc.getDistance(this.loc)
+        )
+    }
+
     move(delta_t) {
         this.speed = this.speed.add(this.a.mul(delta_t));
         this.loc.x += this.speed.x * delta_t + (this.a.x * delta_t ** 2) / 2;
         this.loc.y += this.speed.y * delta_t + (this.a.y * delta_t ** 2) / 2;
+        this.a = new Vector
+        this.speed = new Vector
     }
+
+
+    drawLineTo(another) {
+        const drawLine = false
+        if (drawLine) {
+            ctx.beginPath()
+            ctx.moveTo(this.loc.x, this.loc.y);    // Move the pen to (30, 50)
+            ctx.lineTo(another.loc.x, another.loc.y);  // Draw a line to (150, 100)
+            ctx.stroke();  
+        }
+
+        this.loc.toS()
+        const printlog = false
+        if (printlog) {
+            console.log( this.loc.y + (50 * this.dist_draw_cnt))
+            const energy = this.getEnergyBetween(another)
+            const direction = this.getDirection(another)
+            console.log(energy)
+            ctx.font = '20px serif';
+            ctx.strokeText(JSON.stringify({
+                energy, direction}),  
+                this.loc.x, this.loc.y + (25 * this.dist_draw_cnt)
+            );
+        }
+        this.dist_draw_cnt++
+
+    }
+
     draw() {
         ctx.beginPath();
         ctx.arc(this.loc.x, this.loc.y, 4, 0, Math.PI * 2, true);
         ctx.stroke();
     }
-    update() {
+    calc() {
         this.move(0.3);
+    }
+    update() {
+        this.dist_draw_cnt = 0
+        this.dist_by_atm.clear()
+  //      this.move(0.3);
     }
 }
 class Field {
@@ -87,18 +142,30 @@ class Field {
         this.atoms = new Array();
     }
     update() {
+        console.log("{")
         this.atoms.forEach(atom => {
             let force = new Vector();
             let allExceptThis = () => this.atoms.filter(a => a != atom);
             allExceptThis().forEach(one => {
-                let energy = atom.getEnergyBetween(one);
-                console.log(energy);
-                let direction = atom.loc.sub(one.loc);
-                force = force.add(direction.mul(energy));
+                const energy = one.getEnergyBetween(atom)
+                const force_ = atom.getDirection(one).mul(-energy)
+
+                force = force.add(force_)
+                atom.drawLineTo(one)
             });
-            atom.a = force.div(1);
-            atom.update();
+            
+            atom.a = force.div(
+                (allExceptThis().length == 0) ? 1 : allExceptThis().length
+                )
+            
+            atom.calc()
         });
+        console.log("}\n")
+        
+        this.atoms.forEach(atom => {
+            atom.update();
+
+        })
     }
 
     add(pos) {
