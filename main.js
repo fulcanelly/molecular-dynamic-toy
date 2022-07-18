@@ -67,9 +67,8 @@ class Atom {
     constructor(loc, a, speed) {
         this.loc = loc;
         this.a = a;
-        this.speed = speed;
-        this.dist_by_atm = new Map()
         this.dist_draw_cnt = 0
+        this.speed = new Vector
     }
     getEnergyBetween(another) {
         let distance = another.loc.getDistance(this.loc);
@@ -83,20 +82,18 @@ class Atom {
     }
 
     getDirection(another) {
-        return new Vector(
-            another.loc.x - this.loc.x,
-            another.loc.y - this.loc.y
-        ).div(
+        return another.loc.sub(this.loc).div(
             another.loc.getDistance(this.loc)
         )
     }
 
     move(delta_t) {
-        this.speed = this.speed.add(this.a.mul(delta_t));
-        this.loc.x += this.speed.x * delta_t + (this.a.x * delta_t ** 2) / 2;
-        this.loc.y += this.speed.y * delta_t + (this.a.y * delta_t ** 2) / 2;
-        this.a = new Vector
-        this.speed = new Vector
+        const speed = this.a.mul(delta_t)
+        const loc = speed.add(this.loc)
+        return new Atom(loc, new Vector, speed)
+     //   this.loc.x += speed.x  
+       // this.loc.y += speed.y 
+      
     }
 
 
@@ -132,11 +129,10 @@ class Atom {
         ctx.stroke();
     }
     calc() {
-        this.move(0.3);
+        return this.move(0.03);
     }
     update() {
         this.dist_draw_cnt = 0
-        this.dist_by_atm.clear()
   //      this.move(0.3);
     }
 }
@@ -146,6 +142,7 @@ class Field {
     }
     update() {
         console.log("{")
+        const replace = []
         this.atoms.forEach(atom => {
             let force = new Vector();
             let allExceptThis = () => this.atoms.filter(a => a != atom);
@@ -159,16 +156,24 @@ class Field {
             
             atom.a = force.div(
                 (allExceptThis().length == 0) ? 1 : allExceptThis().length
-                )
+            )
             
-            atom.calc()
+            replace.push(
+                atom.calc()
+            )
         });
+        this.atoms = replace
+        console.log({
+            replace,
+            current: this.atoms 
+        })
         console.log("}\n")
         
         this.atoms.forEach(atom => {
             atom.update();
-
         })
+        console.log(this.atoms )
+     //   this.atoms = replace.map(it => cast_to(it, Atom))
     }
 
     add(pos) {
