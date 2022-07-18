@@ -73,10 +73,13 @@ class Atom {
     }
     getEnergyBetween(another) {
         let distance = another.loc.getDistance(this.loc);
-        if (distance > 150) {
+        if (distance > 450) {
             return 0
         } 
-        return (distance -150) ** 2
+        return (Math.exp(1)/(distance/100)) - Math.exp(distance/100) - 6
+
+        return Math.exp(100/x)+  Math.exp(x/100) - 6
+        //return (distance -150) ** 2
     }
 
     getDirection(another) {
